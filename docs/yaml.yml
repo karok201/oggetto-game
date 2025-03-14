@@ -1,0 +1,589 @@
+openapi: 3.0.3
+info:
+  title: Task Management API
+  description: API для управления задачами, пользователями и достижениями
+  version: 1.0.0
+servers:
+  - url: http://api.example.com/v1
+    description: Основной сервер API
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Иван Иванов"
+        email:
+          type: string
+          example: "ivan@example.com"
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-03-14T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-03-14T10:00:00Z"
+      required:
+        - name
+        - email
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Создать API"
+        description:
+          type: string
+          example: "Разработать REST API для управления задачами"
+        status:
+          type: string
+          example: "in_progress"
+        priority:
+          type: string
+          example: "high"
+        due_date:
+          type: string
+          format: date
+          example: "2025-03-20"
+        user_id:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-03-14T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-03-14T10:00:00Z"
+      required:
+        - title
+        - user_id
+
+    Achievement:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Мастер задач"
+        slug:
+          type: string
+          example: "task-master"
+        description:
+          type: string
+          example: "Завершил 10 задач"
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-03-14T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-03-14T10:00:00Z"
+      required:
+        - name
+        - slug
+
+    UserAchievement:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 1
+        achievement_id:
+          type: integer
+          example: 1
+        progress:
+          type: number
+          format: float
+          example: 75.5
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-03-14T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-03-14T10:00:00Z"
+      required:
+        - user_id
+        - achievement_id
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Resource not found"
+        code:
+          type: integer
+          example: 404
+
+security:
+  - bearerAuth: []
+
+paths:
+  # Users CRUD
+  /users:
+    get:
+      summary: Получить список пользователей
+      tags:
+        - Users
+      responses:
+        '200':
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Неавторизованный доступ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Создать нового пользователя
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: Пользователь создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/{id}:
+    get:
+      summary: Получить пользователя по ID
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Данные пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Обновить пользователя
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: Пользователь обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Удалить пользователя
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Пользователь удален
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Tasks CRUD
+  /tasks:
+    get:
+      summary: Получить список задач
+      tags:
+        - Tasks
+      responses:
+        '200':
+          description: Список задач
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '401':
+          description: Неавторизованный доступ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Создать новую задачу
+      tags:
+        - Tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Task'
+      responses:
+        '201':
+          description: Задача создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tasks/{id}:
+    get:
+      summary: Получить задачу по ID
+      tags:
+        - Tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Данные задачи
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Задача не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Обновить задачу
+      tags:
+        - Tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Task'
+      responses:
+        '200':
+          description: Задача обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Задача не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Удалить задачу
+      tags:
+        - Tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Задача удалена
+        '404':
+          description: Задача не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Achievements CRUD
+  /achievements:
+    get:
+      summary: Получить список достижений
+      tags:
+        - Achievements
+      responses:
+        '200':
+          description: Список достижений
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Achievement'
+        '401':
+          description: Неавторизованный доступ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Создать новое достижение
+      tags:
+        - Achievements
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Achievement'
+      responses:
+        '201':
+          description: Достижение создано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Achievement'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /achievements/{id}:
+    get:
+      summary: Получить достижение по ID
+      tags:
+        - Achievements
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Данные достижения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Achievement'
+        '404':
+          description: Достижение не найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Обновить достижение
+      tags:
+        - Achievements
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Achievement'
+      responses:
+        '200':
+          description: Достижение обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Achievement'
+        '404':
+          description: Достижение не найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Удалить достижение
+      tags:
+        - Achievements
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Достижение удалено
+        '404':
+          description: Достижение не найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # User Achievements (achievements_to_users) Operations
+  /users/{userId}/achievements:
+    get:
+      summary: Получить достижения пользователя
+      tags:
+        - User Achievements
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список достижений пользователя
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserAchievement'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Добавить достижение пользователю
+      tags:
+        - User Achievements
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAchievement'
+      responses:
+        '201':
+          description: Достижение добавлено пользователю
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAchievement'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Пользователь или достижение не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/{userId}/achievements/{achievementId}:
+    delete:
+      summary: Удалить достижение у пользователя
+      tags:
+        - User Achievements
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: achievementId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Достижение удалено у пользователя
+        '404':
+          description: Пользователь или достижение не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
